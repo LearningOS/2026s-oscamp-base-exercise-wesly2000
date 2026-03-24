@@ -51,13 +51,16 @@ pub struct FdTable {
     // TODO: Design the internal structure
     // Hint: use Vec<Option<Arc<dyn File>>>
     //       the index is the fd number, None means the fd is closed or unallocated
+    file_obj: Vec<Option<Arc<dyn File>>>
 }
 
 impl FdTable {
     /// Create an empty fd table
     pub fn new() -> Self {
         // TODO
-        todo!()
+        FdTable {
+            file_obj: vec![]
+        }
     }
 
     /// Allocate a new fd, return the fd number.
@@ -65,25 +68,49 @@ impl FdTable {
     /// Prefers reusing the smallest closed fd number; if no free slot, appends to the end.
     pub fn alloc(&mut self, file: Arc<dyn File>) -> usize {
         // TODO
-        todo!()
+        if let Some((fd, slot)) = self.file_obj.iter_mut().enumerate().find(|(_, s)| s.is_none()) {
+            *slot = Some(Arc::clone(&file));
+            return fd;
+        }
+
+        let fd = self.file_obj.len();
+        self.file_obj.push(Some(Arc::clone(&file)));
+        fd
     }
 
     /// Get the file object for an fd. Returns None if the fd doesn't exist or is closed.
     pub fn get(&self, fd: usize) -> Option<Arc<dyn File>> {
         // TODO
-        todo!()
+        if fd >= self.file_obj.len() {
+            return None;
+        }
+
+        self.file_obj[fd].clone()
     }
 
     /// Close an fd. Returns true on success, false if the fd doesn't exist or is already closed.
     pub fn close(&mut self, fd: usize) -> bool {
         // TODO
-        todo!()
+        if fd >= self.file_obj.len() {
+            return false;
+        }
+
+        match self.file_obj[fd] {
+            Some(_) => {
+                        self.file_obj[fd] = None;
+                        true
+                    },
+            None => false
+        }
     }
 
     /// Return the number of currently allocated fds (excluding closed ones)
     pub fn count(&self) -> usize {
         // TODO
-        todo!()
+        self.file_obj
+            .iter()
+            .filter(|&obj| !obj.is_none())
+            .count()
     }
 }
 
